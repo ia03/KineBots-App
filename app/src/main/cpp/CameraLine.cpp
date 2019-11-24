@@ -2,9 +2,9 @@
 #include "utils.h"
 #include <jni.h>
 
-CameraLine::CameraLine(JNIEnv *env, const jintArray &jni_coordinates)
+CameraLine::CameraLine(JNIEnv *env, const jdoubleArray &jni_coordinates)
 {
-	jint *coordinates = env->GetIntArrayElements(jni_coordinates, nullptr);
+	jdouble *coordinates = env->GetDoubleArrayElements(jni_coordinates, nullptr);
 
 	point_1 = Point(coordinates[0], coordinates[1]);
 	point_2 = Point(coordinates[2], coordinates[3]);

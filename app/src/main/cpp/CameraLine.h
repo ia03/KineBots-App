@@ -12,7 +12,7 @@ struct CameraLine
 	// Links to the actual 3D line that this camera line represents.
 	const Line *line_3d = nullptr;
 
-	CameraLine(JNIEnv *env, const jintArray &jni_coordinates);
+	CameraLine(JNIEnv *env, const jdoubleArray &jni_coordinates);
 
 	CameraLine() = default;
 

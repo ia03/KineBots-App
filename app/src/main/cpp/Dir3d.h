@@ -10,7 +10,7 @@ typedef Point3d DirVec3d;
 // 1. Angles should be in radians.
 // 2. Distances should be in metres.
 
-// ENU (East North Down) convention.
+// NED (North East Down) convention.
 // Default yaw (0) is east.
 struct Dir3d
 {
