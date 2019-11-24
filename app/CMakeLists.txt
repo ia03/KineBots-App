@@ -17,12 +17,16 @@ add_library( # Sets the name of the library.
              SHARED
 
              # Provides a relative path to your source file(s).
-             #src/main/cpp/WatWorld.cpp
-             #src/main/cpp/CameraLine.cpp
-             #src/main/cpp/Dir3d.cpp
-             #src/main/cpp/utils.cpp
+             src/main/cpp/WatWorld.cpp
+             src/main/cpp/CameraLine.cpp
+             src/main/cpp/Dir3d.cpp
+             src/main/cpp/utils.cpp
              #src/main/cpp/Point.cpp
              src/main/cpp/watworldold.cpp )
+
+include_directories(C:/OpenCV-android-sdk/sdk/native/jni/include)
+add_library( lib-opencv SHARED IMPORTED )
+set_target_properties(lib-opencv PROPERTIES IMPORTED_LOCATION  ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libopencv_java4.so)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -43,7 +47,7 @@ find_library( # Sets the name of the path variable.
 
 target_link_libraries( # Specifies the target library.
                        watworld
-
+                       lib-opencv
                        # Links the target library to the log library
                        # included in the NDK.
                        ${log-lib} )

@@ -1,5 +1,8 @@
-#pragma once
-#include "Point.h"
+#ifndef DIR3D_H
+#define DIR3D_H
+#include <opencv2/opencv.hpp>
+
+using namespace cv;
 
 typedef Point3d DirVec3d;
 
@@ -26,3 +29,5 @@ struct Dir3d
 
 	Dir3d operator+(const Dir3d &right_val) const;
 };
+
+#endif

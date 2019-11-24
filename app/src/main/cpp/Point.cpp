@@ -1,6 +1,13 @@
 #include "Point.h"
 
-Point3d &Point3d::operator-=(Point3d &val)
+Point &Point::operator=(const Point &val)
+{
+    x = val.x;
+    y = val.y;
+    return *this;
+}
+
+Point3d &Point3d::operator-=(const Point3d &val)
 {
     x -= val.x;
     y -= val.y;

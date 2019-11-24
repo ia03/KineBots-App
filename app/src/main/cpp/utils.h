@@ -1,5 +1,5 @@
-#pragma once
-#include <opencv2/opencv.hpp>
+#ifndef UTILS_H
+#define UTILS_H
 #include <string>
 #include "WatWorld.h"
 #include "Dir3d.h"
@@ -31,3 +31,4 @@ bool in_margin_of_error(const T value, const T margin_of_error,
 	return (target - margin_of_error) <= value && value
 		<= (target + margin_of_error);
 }
+#endif

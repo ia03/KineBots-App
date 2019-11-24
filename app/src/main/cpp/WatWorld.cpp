@@ -117,11 +117,8 @@ SeenLine WatWorld::gen_seen_line(CameraLine &cam_line)
 	{
 		result.line = new const Line(gen_line(cam_line));
 	}
-	result.matrix = Mat(raw_frame.size(), CV_8UC3);
 	result.point_1 = cam_line.point_1;
 	result.point_2 = cam_line.point_2;
-	line(result.matrix, cam_line.point_1, cam_line.point_2,
-		Scalar(255, 255, 255), line_thickness);
 	return result;
 }
 
@@ -148,50 +145,25 @@ void WatWorld::update_position()
 	}
 	else
 	{
-		std::cout << "Fatal error. No lines found.\n";
+		//std::cout << "Fatal error. No lines found.\n";
 		return;
 	}
 }
 
-void WatWorld::process_recorded_frame(const Mat &frame,
-	const Dir3d &new_heading)
+void WatWorld::process_frame(JNIEnv *env, jobject lines_obj, const Dir3d &new_heading)
 {
-	raw_frame = frame;
+	jclass lines_class = env->GetObjectClass(lines_obj);
+	jmethodID lines_rows_id = env->GetMethodID(lines_class, "rows", "()I");
+	jmethodID lines_get_id = env->GetMethodID(lines_class, "get", "(II)[D");
+	jint rows = env->CallIntMethod(lines_obj, lines_rows_id);
+
 	heading = process_heading(new_heading);
-	std::vector<Vec4i> reducedLines = hough_lines(frame);
-	seen_lines.clear();
 	matched_cam_lines.clear();
 
-	for (const Vec4i &reduced : reducedLines)
+	for (int i = 0; i < static_cast<int>(rows); i++)
 	{
-		CameraLine camera_line(reduced);
-		seen_lines.push_back(gen_seen_line(camera_line));
-	}
-
-	
-	draw();
-	update_position();
-}
-
-void WatWorld::process_frame(const Mat &frame, const Dir3d &new_heading)
-{
-	heading = process_heading(new_heading);
-	std::vector<Vec4i> reducedLines = reduced_lines(frame);
-	matched_cam_lines.clear();
-/*
-	Mat result = Mat::zeros(frame.rows, frame.cols, CV_8UC3);
-
-	for (Vec4i reduced : reducedLines) {
-		line(result, Point(reduced[0], reduced[1]), Point(reduced[2], reduced[3]),
-			Scalar(255, 255, 255), 2);
-	}
-	imshow("Result", result);
-	waitKey(0);
-*/
-
-	for (const Vec4i &reduced : reducedLines)
-	{
-		CameraLine camera_line(reduced);
+		jobject line = env->CallObjectMethod(lines_obj, lines_get_id, static_cast<jint>(i), 0);
+		CameraLine camera_line(env, reinterpret_cast<jintArray>(line));
 
 		for (const Line &line : lines)
 		{
@@ -247,79 +219,34 @@ Dir3d WatWorld::process_heading(Dir3d new_heading) const
 	return new_heading;
 }
 
-void WatWorld::handle_clicked_line(SeenLine &seen_line)
+
+
+extern "C"
+JNIEXPORT jdoubleArray JNICALL
+Java_com_watworld_kinebots_MainActivity_getPos(JNIEnv *env, jobject thiz, jobject lines)
 {
-	if (!seen_line.added)
-	{
-		lines.push_back(*seen_line.line);
-		delete seen_line.line;
-		seen_line.line = &*(--lines.end());
-		seen_line.added = true;
-	}
-	else
-	{
-		const Line *copied_line = new Line(*seen_line.line);
-		std::list<Line>::iterator old_line_iter;
-		for (auto it = lines.begin(); it != lines.end(); it++)
-		{
-			if (&(*it) == seen_line.line)
-			{
-				old_line_iter = it;
-				break;
-			}
-		}
-		lines.erase(old_line_iter);
-		seen_line.line = copied_line;
-		seen_line.added = false;
-	}
-}
+	static WatWorld world;
+	jclass this_class = env->GetObjectClass(thiz);
+	jfieldID orientation_angles_id = env->GetFieldID(this_class, "orientationAngles", "[F");
+	jobject orientation_angles_obj = env->GetObjectField(thiz, orientation_angles_id);
+	jfloatArray *orientation_angles_jarray = reinterpret_cast<jfloatArray *>(
+			&orientation_angles_obj);
+	float *orientation_angles = env->GetFloatArrayElements(*orientation_angles_jarray, NULL);
+	float roll = orientation_angles[1];
+	float pitch = orientation_angles[2];
+	float yaw = orientation_angles[0];
+	env->ReleaseFloatArrayElements(*orientation_angles_jarray, orientation_angles, 0);
+	Dir3d heading(roll, pitch, yaw);
 
-void WatWorld::draw()
-{
-	rendered_frame = raw_frame;
+	world.process_frame(env, lines, heading);
+	Point3d position = world.get_position();
 
-	for (const SeenLine &seen_line : seen_lines)
-	{
-		Scalar color;
-		// Green if added, red if not.
-		if (seen_line.added)
-		{
-			color = Scalar(0, 255, 0);
-		}
-		else
-		{
-			color = Scalar(255, 0, 0);
-		}
+	jdoubleArray result = env->NewDoubleArray(3);
+	jdouble result_data[3];
+	result_data[0] = position.x;
+	result_data[1] = position.y;
+	result_data[2] = position.z;
+	env->SetDoubleArrayRegion(result, 0, 3, result_data);
 
-		line(rendered_frame, seen_line.point_1, seen_line.point_2, color,
-			line_thickness);
-	}
-
-	imshow("Processed Frame", rendered_frame);
-	setMouseCallback("Processed Frame", click_handler, this);
-}
-
-void WatWorld::on_click(int event, int x, int y)
-{
-	if (event != EVENT_LBUTTONDOWN)
-	{
-		return;
-	}
-
-	for (SeenLine &seen_line : seen_lines)
-	{
-		Vec3b pixel = seen_line.matrix.at<Vec3b>(y, x);
-		if (!(pixel[0] == 0 && pixel[1] == 0 && pixel[2] == 0))
-		{
-			handle_clicked_line(seen_line);
-			draw();
-			break;
-		}
-	}
-}
-
-void click_handler(int event, int x, int y, int flags, void *instance)
-{
-	WatWorld *ptr = reinterpret_cast<WatWorld *>(instance);
-	ptr->on_click(event, x, y);
+	return result;
 }

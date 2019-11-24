@@ -1,8 +1,11 @@
 #include "CameraLine.h"
 #include "utils.h"
+#include <jni.h>
 
-CameraLine::CameraLine(const Vec4i &coordinates)
+CameraLine::CameraLine(JNIEnv *env, const jintArray &jni_coordinates)
 {
+	jint *coordinates = env->GetIntArrayElements(jni_coordinates, nullptr);
+
 	point_1 = Point(coordinates[0], coordinates[1]);
 	point_2 = Point(coordinates[2], coordinates[3]);
 }

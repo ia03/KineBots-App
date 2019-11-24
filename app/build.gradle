@@ -4,7 +4,7 @@ android {
     compileSdkVersion 28
     buildToolsVersion "29.0.2"
     defaultConfig {
-        applicationId "cvlab.example.com"
+        applicationId "com.watworld.kinebots"
         minSdkVersion 19
         targetSdkVersion 28
         versionCode 1
@@ -14,6 +14,10 @@ android {
             cmake {
                 cppFlags ""
             }
+        }
+        ndk {
+            moduleName "watworld"
+            stl "stlport_shared"
         }
     }
     buildTypes {

@@ -1,15 +1,18 @@
-#pragma once
-#include "Point.h"
+#ifndef CAMERALINE_H
+#define CAMERALINE_H
+#include <opencv2/opencv.hpp>
 #include "Line.h"
-#include "jni.h"
+#include <jni.h>
 #include <limits>
+
+using namespace cv;
 
 struct CameraLine
 {
 	// Links to the actual 3D line that this camera line represents.
 	const Line *line_3d = nullptr;
 
-	CameraLine(const Vec4i &coordinates);
+	CameraLine(JNIEnv *env, const jintArray &jni_coordinates);
 
 	CameraLine() = default;
 
@@ -24,3 +27,4 @@ struct CameraLine
 
 	double margin_of_error(const double percent) const;
 };
+#endif

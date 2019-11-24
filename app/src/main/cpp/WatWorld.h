@@ -1,20 +1,22 @@
-#pragma once
-#include <opencv2/opencv.hpp>
+#ifndef WATWORLD_H
+#define WATWORLD_H
 #include <vector>
 #include "Dir3d.h"
 #include "CameraLine.h"
 #include "SeenLine.h"
 #include "Line.h"
-#include "Point.h"
+#include <opencv2/opencv.hpp>
 #include <list>
+
+using namespace cv;
 
 typedef Point3d DirVec3d;
 
 class WatWorld
 {
 	const double margin_of_error = 0.3;
-	const double horizontal_fov = 1.59;
-	const double vertical_fov = 1.30;
+	const double horizontal_fov = 1.12118865;
+	const double vertical_fov = 0.814070811;
 	const int image_height = 1080;
 	const int image_width = 1920;
 	const double vert_pixels_per_radian = static_cast<double>(image_height)
@@ -26,9 +28,8 @@ class WatWorld
 	const double radian_per_hor_pixels = horizontal_fov
 		/ static_cast<double>(image_width);
 	const double cam_line_min = 50.0;
-	const double cam_raise = 0.28;
-	const double cam_pitch = 0.75;
-	const double line_thickness = 4;
+	const double cam_raise = 0;
+	const double cam_pitch = 0;
 
 	Dir3d heading;
 	Point3d position;
@@ -69,11 +70,7 @@ public:
 	
 	void update_position();
 
-	// cam_lines is an output argument.
-	void process_recorded_frame(const Mat &frame,
-		const Dir3d &new_heading);
-
-	void process_frame(const Mat &frame, const Dir3d &new_heading);
+	void process_frame(JNIEnv *env, jobject lines, const Dir3d &new_heading);
 
 	// Checks if this camera line matches a line in 3D space and, if so,
 	// assigns that line to the camera line.
@@ -81,12 +78,10 @@ public:
 		const double margin_of_error_percent, bool switched = false);
 
 	Dir3d process_heading(Dir3d heading) const;
-
-	void handle_clicked_line(SeenLine &seen_line);
-
-	void draw();
-
-	void on_click(int event, int x, int y);
 };
 
-static void click_handler(int event, int x, int y, int flags, void *instance);
+
+extern "C"
+JNIEXPORT jdoubleArray JNICALL
+Java_com_watworld_kinebots_MainActivity_getPos(JNIEnv *env, jobject thiz, jobject lines);
+#endif

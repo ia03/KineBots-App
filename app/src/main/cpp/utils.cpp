@@ -2,7 +2,6 @@
 #include <cmath>
 #include "utils.h"
 #include "WatWorld.h"
-#include <opencv2/opencv.hpp>
 #include <string>
 #include <fstream>
 
