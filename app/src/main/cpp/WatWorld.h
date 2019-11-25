@@ -14,7 +14,7 @@ typedef Point3d DirVec3d;
 
 class WatWorld
 {
-	const double margin_of_error = 2;
+	const double margin_of_error = 0.3;
 	const double horizontal_fov = 1.12118865;
 	const double vertical_fov = 0.814070811;
 	const int image_height = 1080;

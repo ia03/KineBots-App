@@ -228,9 +228,9 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
     {
         firstVal += secondVal;
         if (firstVal > Math.PI) {
-            firstVal -= Math.PI;
+            firstVal -= 2 * Math.PI;
         } else if (firstVal < -Math.PI) {
-            firstVal += Math.PI;
+            firstVal += 2 * Math.PI;
         }
         return firstVal;
     }

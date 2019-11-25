@@ -233,8 +233,8 @@ Java_com_watworld_kinebots_MainActivity_getPos(JNIEnv *env, jobject thiz, jobjec
 	{
 		first = false;
 		Line line;
-		line.point_1 = Point3d(0.6, 0.225, -0.6);
-		line.point_2 = Point3d(0.6, -0.225, -0.6);
+		line.point_1 = Point3d(0.6, 0.2, -0.1);
+		line.point_2 = Point3d(0.6, -0.2, -0.1);
 		world.add_line(line);
 	}
 	jclass this_class = env->GetObjectClass(thiz);
