@@ -150,7 +150,8 @@ void WatWorld::update_position()
 	}
 }
 
-void WatWorld::process_frame(JNIEnv *env, jobject lines_obj, const Dir3d &new_heading)
+void WatWorld::process_frame(JNIEnv *env, jobject lines_obj,
+		const Dir3d &new_heading)
 {
 	jclass lines_class = env->GetObjectClass(lines_obj);
 	jmethodID lines_rows_id = env->GetMethodID(lines_class, "rows", "()I");
@@ -162,7 +163,8 @@ void WatWorld::process_frame(JNIEnv *env, jobject lines_obj, const Dir3d &new_he
 
 	for (int i = 0; i < static_cast<int>(rows); i++)
 	{
-		jobject line = env->CallObjectMethod(lines_obj, lines_get_id, static_cast<jint>(i), 0);
+		jobject line = env->CallObjectMethod(lines_obj, lines_get_id,
+				static_cast<jint>(i), 0);
 		CameraLine camera_line(env, reinterpret_cast<jdoubleArray>(line));
 
 		for (const Line &line : lines)
@@ -236,15 +238,19 @@ Java_com_watworld_kinebots_MainActivity_getPos(JNIEnv *env, jobject thiz, jobjec
 		world.add_line(line);
 	}
 	jclass this_class = env->GetObjectClass(thiz);
-	jfieldID orientation_angles_id = env->GetFieldID(this_class, "orientationAngles", "[F");
-	jobject orientation_angles_obj = env->GetObjectField(thiz, orientation_angles_id);
+	jfieldID orientation_angles_id = env->GetFieldID(this_class,
+			"orientationAngles", "[F");
+	jobject orientation_angles_obj = env->GetObjectField(thiz,
+			orientation_angles_id);
 	jfloatArray *orientation_angles_jarray = reinterpret_cast<jfloatArray *>(
 			&orientation_angles_obj);
-	float *orientation_angles = env->GetFloatArrayElements(*orientation_angles_jarray, nullptr);
+	float *orientation_angles = env->GetFloatArrayElements(
+			*orientation_angles_jarray, nullptr);
 	float roll = orientation_angles[1];
 	float pitch = orientation_angles[2];
 	float yaw = orientation_angles[0];
-	env->ReleaseFloatArrayElements(*orientation_angles_jarray, orientation_angles, 0);
+	env->ReleaseFloatArrayElements(*orientation_angles_jarray,
+			orientation_angles, 0);
 	Dir3d heading(roll, pitch, yaw);
 
 	world.process_frame(env, lines, heading);
