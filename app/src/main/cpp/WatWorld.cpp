@@ -15,12 +15,30 @@ Point3d WatWorld::get_position() const
 
 void WatWorld::add_line(const Line &line)
 {
-	lines.push_back(line);
+    lines.push_back(line);
+}
+
+void WatWorld::add_line(const double x1, const double y1, const double z1,
+	const double x2, const double y2, const double z2)
+{
+    Line line;
+    line.point_1 = Point3d(x1, y1, z1);
+    line.point_2 = Point3d(x2, y2, z2);
+    add_line(line);
 }
 
 void WatWorld::set_lines(const std::list<Line> &input_lines)
 {
 	lines = input_lines;
+}
+
+void WatWorld::rotate_lines(const Dir3d &angle)
+{
+	for (auto &line : lines)
+	{
+		line.point_1 = rotate(line.point_1, angle);
+		line.point_2 = rotate(line.point_2, angle);
+	}
 }
 
 Dir3d WatWorld::angle_to(Point3d point) const
@@ -232,25 +250,26 @@ Java_com_watworld_kinebots_MainActivity_getPos(JNIEnv *env, jobject thiz, jobjec
 	if (first)
 	{
 		first = false;
-		Line line;
-		line.point_1 = Point3d(0.6, 0.2, -0.1);
-		line.point_2 = Point3d(0.6, -0.2, -0.1);
-		world.add_line(line);
+        world.add_line(0.05, 0.5, 0.05, -0.05, 0.5, 0.05);
+        world.add_line(0.05, 0.5, 0.05, 0.05, 0.5, -0.05);
+        world.add_line(-0.05, 0.5, -0.05, -0.05, 0.5, 0.05);
+        world.add_line(-0.05, 0.5, -0.05, 0.05, 0.5, -0.05);
+        world.rotate_lines(Dir3d(0, 0, 0.48));
 	}
 	jclass this_class = env->GetObjectClass(thiz);
 	jfieldID orientation_angles_id = env->GetFieldID(this_class,
-			"orientationAngles", "[F");
+		"orientationAngles", "[F");
 	jobject orientation_angles_obj = env->GetObjectField(thiz,
-			orientation_angles_id);
+		orientation_angles_id);
 	jfloatArray *orientation_angles_jarray = reinterpret_cast<jfloatArray *>(
-			&orientation_angles_obj);
+		&orientation_angles_obj);
 	float *orientation_angles = env->GetFloatArrayElements(
-			*orientation_angles_jarray, nullptr);
+		*orientation_angles_jarray, nullptr);
 	float roll = orientation_angles[1];
 	float pitch = orientation_angles[2];
 	float yaw = orientation_angles[0];
 	env->ReleaseFloatArrayElements(*orientation_angles_jarray,
-			orientation_angles, 0);
+		orientation_angles, 0);
 	Dir3d heading(roll, pitch, yaw);
 
 	world.process_frame(env, lines, heading);

@@ -14,7 +14,7 @@ typedef Point3d DirVec3d;
 // Default yaw (0) is east.
 struct Dir3d
 {
-	Dir3d(double pitch, double roll, double yaw);
+	Dir3d(double roll, double pitch, double yaw);
 	Dir3d() = default;
 
 	double roll;

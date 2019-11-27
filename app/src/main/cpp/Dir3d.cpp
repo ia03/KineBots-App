@@ -4,8 +4,8 @@
 
 typedef Point3d DirVec3d;
 
-Dir3d::Dir3d(double pitch, double roll, double yaw) : pitch(pitch),
-roll(roll), yaw(yaw)
+Dir3d::Dir3d(double pitch, double roll, double yaw) : roll(roll),
+pitch(pitch), yaw(yaw)
 {}
 
 Dir3d Dir3d::operator-() const

@@ -148,6 +148,7 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
     }
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
+        garbageCollection();
         Mat mRgba = inputFrame.rgba();
         Mat mGray = inputFrame.gray();
         Mat cannyEdges = new Mat();
@@ -155,7 +156,7 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
         Imgproc.resize(mGray, mGray, new Size(1280, 720));
         Imgproc.GaussianBlur(mGray, mGray, new Size(5, 5), 0, 0);
         Imgproc.Canny(mGray, cannyEdges, 50, 100, 3);
-        Imgproc.HoughLinesP(cannyEdges, lines, 1, Math.PI / 180, 20, 400, 60);
+        Imgproc.HoughLinesP(cannyEdges, lines, 1, Math.PI / 180, 20, 200, 60);
 
         for (int i = 0; i < lines.rows(); i++) {
             double[] points = lines.get(i, 0);
@@ -171,6 +172,8 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
 
             Imgproc.line(mRgba, pt1, pt2, new Scalar(0, 255, 0), 2);
         }
+        Point center = new Point(1920 / 2, 1080 / 2);
+        Imgproc.circle(mRgba, center, 3, new Scalar(255, 0, 0));
 
         mRgba.copyTo(processedFrame);
         updateOrientationAngles();
@@ -181,12 +184,7 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
         Imgproc.putText(processedFrame, pos[0] + " " + pos[1] + " " +
                         pos[2], new Point(500, 1000),
                 Imgproc.FONT_HERSHEY_SIMPLEX, 1f, new Scalar(255, 0, 0), 2);
-        count++;
-        if (count == 100) {
-            System.gc();  // Not a good solution to the memory leak. Might change this later.
-            System.runFinalization();
-            count = 0;
-        }
+
         return processedFrame;
     }
 
@@ -224,8 +222,16 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
                 (float)Math.PI / 2);
     }
 
-    float addEulerAngle(float firstVal, float secondVal)
-    {
+    void garbageCollection() {
+        count++;
+        if (count == 100) {
+            System.gc();  // Not a good solution to the memory leak. Might change this later.
+            System.runFinalization();
+            count = 0;
+        }
+    }
+
+    float addEulerAngle(float firstVal, float secondVal) {
         firstVal += secondVal;
         if (firstVal > Math.PI) {
             firstVal -= 2 * Math.PI;
