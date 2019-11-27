@@ -23,6 +23,11 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -79,6 +84,44 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
         mOpenCvCameraView.setCvCameraViewListener(this);
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        
+        handleDatabase();
+    }
+            
+    private void handleDatabase() {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference linesRef = database.getReference("lines/");
+        DatabaseReference rootRef = database.getReference();
+        
+        linesRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
+                double x1, y1, z1, x2, y2, z2;
+                x1 = dataSnapshot.child("x1").getValue();
+                y1 = dataSnapshot.child("y1").getValue();
+                z1 = dataSnapshot.child("z1").getValue();
+                x2 = dataSnapshot.child("x2").getValue();
+                y2 = dataSnapshot.child("y2").getValue();
+                z2 = dataSnapshot.child("z2").getValue();
+                
+                addLine(x1, y1, z1, x2, y2, z2);
+            }
+        });
+        
+        rootRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
+                if (dataSnapshot.getKey() != "rotation") {
+                    return;
+                }
+                double roll, pitch, yaw;
+                roll = dataSnapshot.child("roll").getValue();
+                pitch = dataSnapshot.child("pitch").getValue();
+                yaw = dataSnapshot.child("yaw").getValue();
+                
+                setRotation(roll, pitch, yaw);
+            }
+        });
     }
 
     @Override
@@ -246,4 +289,7 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
     }
 
     private native double[] getPos(Mat lines);
+    private native addLine(double x1, double y1, double z1,
+        double x2, double y2, double z2);
+    private native setRotation(double roll, double pitch, double yaw);
 }
