@@ -18,16 +18,19 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.hardware.Camera.Parameters;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 
 import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.database.ChildEventListener;
 
+import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.List;
 
@@ -90,37 +93,66 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
             
     private void handleDatabase() {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
+        database.setPersistenceEnabled(true);
         DatabaseReference linesRef = database.getReference("lines/");
         DatabaseReference rootRef = database.getReference();
         
-        linesRef.addValueEventListener(new ValueEventListener() {
+        linesRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
                 double x1, y1, z1, x2, y2, z2;
-                x1 = dataSnapshot.child("x1").getValue();
-                y1 = dataSnapshot.child("y1").getValue();
-                z1 = dataSnapshot.child("z1").getValue();
-                x2 = dataSnapshot.child("x2").getValue();
-                y2 = dataSnapshot.child("y2").getValue();
-                z2 = dataSnapshot.child("z2").getValue();
+                x1 = dataSnapshot.child("x1").getValue(Double.class);
+                y1 = dataSnapshot.child("y1").getValue(Double.class);
+                z1 = dataSnapshot.child("z1").getValue(Double.class);
+                x2 = dataSnapshot.child("x2").getValue(Double.class);
+                y2 = dataSnapshot.child("y2").getValue(Double.class);
+                z2 = dataSnapshot.child("z2").getValue(Double.class);
                 
                 addLine(x1, y1, z1, x2, y2, z2);
             }
+
+            @Override
+            public void onCancelled(DatabaseError error) {}
+
+            @Override
+            public void onChildChanged(DataSnapshot snapshot,
+                                       String previousChildName) {}
+
+            @Override
+            public void onChildRemoved(DataSnapshot snapshot) {}
+
+            @Override
+            public void onChildMoved(DataSnapshot snapshot,
+                                     String previousChildName) {}
         });
         
-        rootRef.addValueEventListener(new ValueEventListener() {
+        rootRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
-                if (dataSnapshot.getKey() != "rotation") {
+                if (!dataSnapshot.getKey().equals("rotation")) {
                     return;
                 }
                 double roll, pitch, yaw;
-                roll = dataSnapshot.child("roll").getValue();
-                pitch = dataSnapshot.child("pitch").getValue();
-                yaw = dataSnapshot.child("yaw").getValue();
+                roll = dataSnapshot.child("roll").getValue(Double.class);
+                pitch = dataSnapshot.child("pitch").getValue(Double.class);
+                yaw = dataSnapshot.child("yaw").getValue(Double.class);
                 
                 setRotation(roll, pitch, yaw);
             }
+
+            @Override
+            public void onCancelled(DatabaseError error) {}
+
+            @Override
+            public void onChildChanged(DataSnapshot snapshot,
+                String previousChildName) {}
+
+            @Override
+            public void onChildRemoved(DataSnapshot snapshot) {}
+
+            @Override
+            public void onChildMoved(DataSnapshot snapshot,
+                                       String previousChildName) {}
         });
     }
 
@@ -196,10 +228,13 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
         Mat mGray = inputFrame.gray();
         Mat cannyEdges = new Mat();
         Mat lines = new Mat();
-        Imgproc.resize(mGray, mGray, new Size(1280, 720));
+        //Mat temp = new Mat();
+        //Imgproc.resize(mGray, mGray, new Size(1280, 720));
         Imgproc.GaussianBlur(mGray, mGray, new Size(5, 5), 0, 0);
-        Imgproc.Canny(mGray, cannyEdges, 50, 100, 3);
-        Imgproc.HoughLinesP(cannyEdges, lines, 1, Math.PI / 180, 20, 200, 60);
+        //Imgproc.bilateralFilter(mGray, temp, 5, 50, 50);
+        Imgproc.Canny(mGray, cannyEdges, 255/3, 255, 3);
+        Imgproc.HoughLinesP(cannyEdges, lines, 1, 5 * Math.PI / 180,
+            10, 100, 60);
 
         for (int i = 0; i < lines.rows(); i++) {
             double[] points = lines.get(i, 0);
@@ -210,8 +245,8 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
             x2 = points[2];
             y2 = points[3];
 
-            Point pt1 = new Point(x1*1.5, y1*1.5);
-            Point pt2 = new Point(x2*1.5, y2*1.5);
+            Point pt1 = new Point(x1, y1);
+            Point pt2 = new Point(x2, y2);
 
             Imgproc.line(mRgba, pt1, pt2, new Scalar(0, 255, 0), 2);
         }
@@ -221,12 +256,15 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
         mRgba.copyTo(processedFrame);
         updateOrientationAngles();
         double[] pos = getPos(lines);
-        Imgproc.putText(processedFrame, orientationAngles[0] + " " + orientationAngles[1] + " " +
-                        orientationAngles[2], new Point(500, 30),
-                Imgproc.FONT_HERSHEY_SIMPLEX, 1f, new Scalar(255, 0, 0), 2);
-        Imgproc.putText(processedFrame, pos[0] + " " + pos[1] + " " +
-                        pos[2], new Point(500, 1000),
-                Imgproc.FONT_HERSHEY_SIMPLEX, 1f, new Scalar(255, 0, 0), 2);
+        //Imgproc.putText(processedFrame, orientationAngles[0] + " " + orientationAngles[1] + " " +
+        //                orientationAngles[2], new Point(500, 30),
+        //        Imgproc.FONT_HERSHEY_SIMPLEX, 1f, new Scalar(255, 0, 0), 4);
+        String x = new DecimalFormat("#.##").format(pos[0]);
+        String y = new DecimalFormat("#.##").format(pos[1]);
+        String z = new DecimalFormat("#.##").format(pos[2]);
+        Imgproc.putText(processedFrame, "Position: " + x +
+                " " + y + " " + z, new Point(500, 1000),
+                Imgproc.FONT_HERSHEY_SIMPLEX, 2f, new Scalar(255, 0, 0), 8);
 
         return processedFrame;
     }
@@ -289,7 +327,7 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
     }
 
     private native double[] getPos(Mat lines);
-    private native addLine(double x1, double y1, double z1,
+    private native void addLine(double x1, double y1, double z1,
         double x2, double y2, double z2);
-    private native setRotation(double roll, double pitch, double yaw);
+    private native void setRotation(double roll, double pitch, double yaw);
 }

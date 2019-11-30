@@ -14,7 +14,7 @@ typedef Point3d DirVec3d;
 
 class WatWorld
 {
-    const double margin_of_error = 0.3;
+    const double margin_of_error = 0.2;
     const double horizontal_fov = 1; // ~1
     const double vertical_fov = 0.837758041;  // ~.66, .5585
     const int image_height = 1080;
@@ -85,8 +85,18 @@ public:
     Dir3d process_heading(Dir3d heading) const;
 };
 
-
 extern "C"
 JNIEXPORT jdoubleArray JNICALL
-Java_com_watworld_kinebots_MainActivity_getPos(JNIEnv *env, jobject thiz, jobject lines);
+Java_com_watworld_kinebots_MainActivity_getPos(JNIEnv *env, jobject thiz,
+    jobject lines);
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_watworld_kinebots_MainActivity_addLine(JNIEnv *env, jobject thiz,
+    jdouble x1, jdouble y1, jdouble z1, jdouble x2, jdouble y2, jdouble z2);
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_watworld_kinebots_MainActivity_setRotation(JNIEnv *env, jobject thiz,
+    jdouble roll, jdouble pitch, jdouble yaw);
 #endif

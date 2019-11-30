@@ -8,6 +8,8 @@
 #include "utils.h"
 #include "Line.h"
 
+WatWorld world;
+
 Point3d WatWorld::get_position() const
 {
 	return position;
@@ -245,17 +247,6 @@ extern "C"
 JNIEXPORT jdoubleArray JNICALL
 Java_com_watworld_kinebots_MainActivity_getPos(JNIEnv *env, jobject thiz, jobject lines)
 {
-	static WatWorld world;
-	static bool first = true;
-	if (first)
-	{
-		first = false;
-        world.add_line(0.05, 0.5, 0.05, -0.05, 0.5, 0.05);
-        world.add_line(0.05, 0.5, 0.05, 0.05, 0.5, -0.05);
-        world.add_line(-0.05, 0.5, -0.05, -0.05, 0.5, 0.05);
-        world.add_line(-0.05, 0.5, -0.05, 0.05, 0.5, -0.05);
-        world.rotate_lines(Dir3d(0, 0, 0.48));
-	}
 	jclass this_class = env->GetObjectClass(thiz);
 	jfieldID orientation_angles_id = env->GetFieldID(this_class,
 		"orientationAngles", "[F");
@@ -284,3 +275,21 @@ Java_com_watworld_kinebots_MainActivity_getPos(JNIEnv *env, jobject thiz, jobjec
 
 	return result;
 }
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_watworld_kinebots_MainActivity_addLine(JNIEnv *env, jobject thiz,
+    jdouble x1, jdouble y1, jdouble z1, jdouble x2, jdouble y2, jdouble z2)
+{
+    world.add_line(x1, y1, z1, x2, y2, z2);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_watworld_kinebots_MainActivity_setRotation(JNIEnv *env, jobject thiz,
+	jdouble roll, jdouble pitch, jdouble yaw)
+{
+	Dir3d dir(roll, pitch, yaw);
+	world.rotate_lines(dir);
+}
+
