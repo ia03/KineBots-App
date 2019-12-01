@@ -22,7 +22,7 @@ add_library( # Sets the name of the library.
              src/main/cpp/Dir3d.cpp
              src/main/cpp/utils.cpp
              #src/main/cpp/Point.cpp
-             src/main/cpp/watworldold.cpp )
+        )
 
 include_directories(C:/OpenCV-android-sdk/sdk/native/jni/include)
 add_library( lib-opencv SHARED IMPORTED )

@@ -49,6 +49,7 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
     private final float[] orientationAngles = new float[3];
 
     private int count = 0;
+    private double[] pos;
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -255,7 +256,7 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
 
         mRgba.copyTo(processedFrame);
         updateOrientationAngles();
-        double[] pos = getPos(lines);
+        pos = getPos(lines);
         //Imgproc.putText(processedFrame, orientationAngles[0] + " " + orientationAngles[1] + " " +
         //                orientationAngles[2], new Point(500, 30),
         //        Imgproc.FONT_HERSHEY_SIMPLEX, 1f, new Scalar(255, 0, 0), 4);
