@@ -20,6 +20,12 @@ Point3d rotate(Point3d point, const Dir3d &angle);
 Point3d get_camera_pos(const Point3d &point_1, DirVec3d dir_vec_1,
 	const Point3d &point_2, DirVec3d dir_vec_2);
 
+template <typename T>
+double distance(const T &point_1, const T &point_2)
+{
+	return norm(point_1 - point_2);
+}
+
 double distance(const Point &point_1, const Point &point_2);
 
 double add_euler_angle(const double a, const double b);

@@ -21,7 +21,7 @@ add_library( # Sets the name of the library.
              src/main/cpp/CameraLine.cpp
              src/main/cpp/Dir3d.cpp
              src/main/cpp/utils.cpp
-             #src/main/cpp/Point.cpp
+        #src/main/cpp/Point.cpp
         )
 
 include_directories(C:/OpenCV-android-sdk/sdk/native/jni/include)

@@ -1,12 +1,17 @@
 #ifndef WATWORLD_H
 #define WATWORLD_H
 #include <vector>
+#include <queue>
 #include "Dir3d.h"
 #include "CameraLine.h"
 #include "SeenLine.h"
 #include "Line.h"
+#include "Motor_direction.h"
+#include "PosNode.h"
 #include <opencv2/opencv.hpp>
 #include <list>
+#include <string>
+#include <unordered_map>
 
 using namespace cv;
 
@@ -33,11 +38,12 @@ class WatWorld
 
     Dir3d heading;
     Point3d position;
+    Motor_direction motor_direction;
 
     std::list<Line> lines;
-    std::vector<Point3d> navdots;
-    
-    std::vector<SeenLine> seen_lines;
+    std::unordered_map<std::string, PosNode> nodes;
+    std::vector<PosNode *> path;
+
     std::vector<CameraLine> matched_cam_lines;  // Reset every frame.
 
 
@@ -50,6 +56,10 @@ public:
 
     void add_line(const double x1, const double y1, const double z1,
         const double x2, const double y2, const double z2);
+
+    void add_node(std::string key, double x, double y, double z);
+
+    void add_connection(std::string key_1, std::string key_2);
 
     void set_lines(const std::list<Line> &input_lines);
 
@@ -83,6 +93,10 @@ public:
         const double margin_of_error_percent, bool switched = false);
 
     Dir3d process_heading(Dir3d heading) const;
+
+    Motor_direction get_motor_direction();
+
+    void calculate_path(PosNode *goal);
 };
 
 extern "C"
@@ -99,4 +113,19 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_watworld_kinebots_MainActivity_setRotation(JNIEnv *env, jobject thiz,
     jdouble roll, jdouble pitch, jdouble yaw);
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_watworld_kinebots_MainActivity_getMotorDirection(JNIEnv *env,
+    jobject thiz);
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_watworld_kinebots_MainActivity_addNode(JNIEnv *env, jobject thiz,
+    jstring key, jdouble x, jdouble y, jdouble z);
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_watworld_kinebots_MainActivity_addConnection(JNIEnv *env, jobject thiz,
+    jstring key1, jstring key2);
 #endif

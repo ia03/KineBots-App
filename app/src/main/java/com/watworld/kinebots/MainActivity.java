@@ -94,7 +94,6 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
             
     private void handleDatabase() {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-        database.setPersistenceEnabled(true);
         DatabaseReference linesRef = database.getReference("lines/");
         DatabaseReference rootRef = database.getReference();
         
@@ -266,7 +265,7 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
         Imgproc.putText(processedFrame, "Position: " + x +
                 " " + y + " " + z, new Point(500, 1000),
                 Imgproc.FONT_HERSHEY_SIMPLEX, 2f, new Scalar(255, 0, 0), 8);
-
+        getMotorDirection();
         return processedFrame;
     }
 
@@ -331,4 +330,7 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
     private native void addLine(double x1, double y1, double z1,
         double x2, double y2, double z2);
     private native void setRotation(double roll, double pitch, double yaw);
+    private native void addNode(String key, double x, double y, double z);
+    private native void addConnection(String key1, String key2);
+    private native int getMotorDirection();
 }

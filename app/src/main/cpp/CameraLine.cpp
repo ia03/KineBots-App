@@ -17,7 +17,7 @@ bool CameraLine::operator<(const CameraLine &right_val) const
 
 double CameraLine::size() const
 {
-	return distance(point_1, point_2);
+	return distance<Point>(point_1, point_2);
 }
 
 double CameraLine::margin_of_error(const double percent) const

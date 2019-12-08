@@ -140,11 +140,6 @@ Point3d get_camera_pos(const Point3d &point_1, DirVec3d dir_vec_1,
 	return static_cast<Point3d>((closest_on_line_1 + closest_on_line_2) / 2);
 }
 
-double distance(const Point & point_1, const Point & point_2)
-{
-	return norm(point_1 - point_2);
-}
-
 double add_euler_angle(const double a, const double b)
 {
 	double result = a + b;

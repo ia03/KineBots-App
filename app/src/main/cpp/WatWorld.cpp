@@ -7,6 +7,7 @@
 #include "SeenLine.h"
 #include "utils.h"
 #include "Line.h"
+#include "Motor_direction.h"
 
 WatWorld world;
 
@@ -27,6 +28,18 @@ void WatWorld::add_line(const double x1, const double y1, const double z1,
     line.point_1 = Point3d(x1, y1, z1);
     line.point_2 = Point3d(x2, y2, z2);
     add_line(line);
+}
+
+void WatWorld::add_node(std::string key, double x, double y, double z)
+{
+	nodes[key] = PosNode();
+	nodes[key].position = Point3d(x, y, z);
+}
+
+void WatWorld::add_connection(std::string key_1, std::string key_2)
+{
+	nodes[key_1].connections.push_back(&nodes[key_2]);
+	nodes[key_2].connections.push_back(&nodes[key_1]);
 }
 
 void WatWorld::set_lines(const std::list<Line> &input_lines)
@@ -178,7 +191,7 @@ void WatWorld::process_frame(JNIEnv *env, jobject lines_obj,
 	jmethodID lines_get_id = env->GetMethodID(lines_class, "get", "(II)[D");
 	jint rows = env->CallIntMethod(lines_obj, lines_rows_id);
 
-	heading = process_heading(new_heading);
+	set_heading(process_heading(new_heading));
 	matched_cam_lines.clear();
 
 	for (int i = 0; i < static_cast<int>(rows); i++)
@@ -213,11 +226,11 @@ bool WatWorld::match(CameraLine &camera_line, const Line &line,
 	Point expected_point_2 = point(angle_to(line.point_2));
 	//const double error_margin = camera_line.margin_of_error(
 	//	margin_of_error_percent);
-	const double error_margin = distance(expected_point_1, expected_point_2)
-		* margin_of_error_percent;
-	const double dist_1 = distance(
+	const double error_margin = distance<Point>(expected_point_1,
+		expected_point_2) * margin_of_error_percent;
+	const double dist_1 = distance<Point>(
 		camera_line.point_1, expected_point_1);
-	const double dist_2 = distance(
+	const double dist_2 = distance<Point>(
 		camera_line.point_2, expected_point_2);
 	if (in_margin_of_error(dist_1, error_margin, 0.0) && in_margin_of_error(
 		dist_2, error_margin, 0.0))
@@ -245,7 +258,8 @@ Dir3d WatWorld::process_heading(Dir3d new_heading) const
 
 extern "C"
 JNIEXPORT jdoubleArray JNICALL
-Java_com_watworld_kinebots_MainActivity_getPos(JNIEnv *env, jobject thiz, jobject lines)
+Java_com_watworld_kinebots_MainActivity_getPos(JNIEnv *env, jobject thiz,
+	jobject lines)
 {
 	jclass this_class = env->GetObjectClass(thiz);
 	jfieldID orientation_angles_id = env->GetFieldID(this_class,
@@ -276,6 +290,78 @@ Java_com_watworld_kinebots_MainActivity_getPos(JNIEnv *env, jobject thiz, jobjec
 	return result;
 }
 
+Motor_direction WatWorld::get_motor_direction()
+{
+
+	add_node("1", 1, 0, 0);
+	add_node("2", 2, 0, 0);
+	add_node("3", 3, 0, 0);
+	add_connection("1", "2");
+	add_connection("1", "3");
+	add_connection("2", "3");
+	calculate_path(&nodes["3"]);
+	return motor_direction;
+}
+
+void WatWorld::calculate_path(PosNode *goal)
+{
+	// The starting node is the one that's closest to the current position.
+	PosNode *starting_node = &(std::min_element(nodes.begin(), nodes.end(),
+		[this](const auto &node_1, const auto &node_2) -> bool {
+        return distance(node_1.second.position, position) < distance(
+        	node_2.second.position, position);
+	})->second);
+	std::vector<PosNode *> open_nodes;
+	std::vector<PosNode *> closed_nodes;
+
+	open_nodes.push_back(starting_node);
+	while (!open_nodes.empty())
+	{
+		std::vector<PosNode *>::iterator current_node = std::min_element(
+			open_nodes.begin(), open_nodes.end(), [](PosNode *node_1,
+				PosNode *node_2) -> bool {
+				return node_1->f < node_2->f;
+			});
+		closed_nodes.push_back(*current_node);
+		open_nodes.erase(current_node);
+
+		// Pathfinding is complete.
+		if (*current_node == goal)
+		{
+			PosNode *traced_node = *current_node;
+			while (traced_node != nullptr)
+			{
+				path.push_back(traced_node);
+				traced_node = traced_node->parent;
+			}
+			std::reverse(path.begin(), path.end());
+			return;
+		}
+		for (auto &node : (*current_node)->connections)
+		{
+			if (std::find(closed_nodes.begin(),
+				closed_nodes.end(), node) != closed_nodes.end())
+			{
+				continue;
+			}
+
+			double new_g = (*current_node)->g + distance(node->position,
+				(*current_node)->position);
+			if ((std::find(open_nodes.begin(), open_nodes.end(),
+				node) != open_nodes.end()) && new_g > node->g)
+			{
+				continue;
+			}
+			node->parent = (*current_node);
+			node->g = new_g;
+			node->h = distance(node->position, goal->position);
+			node->f = node->g + node->h;
+			open_nodes.push_back(node);
+		}
+	}
+
+}
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_watworld_kinebots_MainActivity_addLine(JNIEnv *env, jobject thiz,
@@ -293,3 +379,29 @@ Java_com_watworld_kinebots_MainActivity_setRotation(JNIEnv *env, jobject thiz,
 	world.rotate_lines(dir);
 }
 
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_watworld_kinebots_MainActivity_getMotorDirection(JNIEnv *env,
+	jobject thiz)
+{
+	return static_cast<jint>(static_cast<int>(world.get_motor_direction()));
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_watworld_kinebots_MainActivity_addNode(JNIEnv *env, jobject thiz,
+	jstring key, jdouble x, jdouble y, jdouble z)
+{
+	std::string converted_key = env->GetStringUTFChars(key, nullptr);
+	world.add_node(converted_key, x, y, z);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_watworld_kinebots_MainActivity_addConnection(JNIEnv *env, jobject thiz,
+	jstring key1, jstring key2)
+{
+	std::string converted_key_1 = env->GetStringUTFChars(key1, nullptr);
+	std::string converted_key_2 = env->GetStringUTFChars(key2, nullptr);
+	world.add_connection(converted_key_1, converted_key_2);
+}
